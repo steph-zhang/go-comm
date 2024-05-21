@@ -28,20 +28,16 @@ func NewServer(ip string, port int) *Server {
 }
 
 func (s *Server) Handler(conn net.Conn) {
-	user := NewUser(conn)
+	user := NewUser(conn, s)
 
-	s.MapLock.Lock()
-	s.UserMap[user.Name] = user
-	s.MapLock.Unlock()
-
-	s.BroadCast(user, "已上线")
+	user.Online()
 
 	go func() {
 		buf := make([]byte, 4096)
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				s.BroadCast(user, conn.RemoteAddr().String()+"下线")
+				user.Offline()
 				return
 			}
 
@@ -51,7 +47,7 @@ func (s *Server) Handler(conn net.Conn) {
 			}
 
 			msg := string(buf[:n-1])
-			s.BroadCast(user, msg)
+			user.SendMsg(msg)
 		}
 	}()
 

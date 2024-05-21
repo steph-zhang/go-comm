@@ -5,23 +5,41 @@ import (
 )
 
 type User struct {
-	Name string
-	Addr string
-	Conn net.Conn
-	C    chan string
+	Name   string
+	Addr   string
+	Conn   net.Conn
+	C      chan string
+	server *Server
 }
 
-func NewUser(conn net.Conn) *User {
+func NewUser(conn net.Conn, server *Server) *User {
 	userAddr := conn.RemoteAddr().String()
 	user := &User{
-		Name: userAddr,
-		Addr: userAddr,
-		Conn: conn,
-		C:    make(chan string),
+		Name:   userAddr,
+		Addr:   userAddr,
+		Conn:   conn,
+		C:      make(chan string),
+		server: server,
 	}
 
 	go user.ListenMessage()
 	return user
+}
+
+func (u *User) Online() {
+	u.server.MapLock.Lock()
+	u.server.UserMap[u.Name] = u
+	u.server.MapLock.Unlock()
+	u.server.BroadCast(u, "已上线")
+}
+
+func (u *User) Offline() {
+	delete(u.server.UserMap, u.Name)
+	u.server.BroadCast(u, u.Name+"下线")
+}
+
+func (u *User) SendMsg(msg string) {
+	u.server.BroadCast(u, msg)
 }
 
 func (u *User) ListenMessage() {
