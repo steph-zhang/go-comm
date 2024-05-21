@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -19,6 +20,9 @@ func NewServer(ip string, port int) *Server {
 	server := &Server{
 		Ip:   ip,
 		Port: port,
+
+		UserMap: make(map[string]*User),
+		Message: make(chan string),
 	}
 	return server
 }
@@ -31,11 +35,31 @@ func (s *Server) Handler(conn net.Conn) {
 	s.MapLock.Unlock()
 
 	s.BroadCast(user, "已上线")
+
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				s.BroadCast(user, conn.RemoteAddr().String()+"下线")
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("err:", err)
+				return
+			}
+
+			msg := string(buf[:n-1])
+			s.BroadCast(user, msg)
+		}
+	}()
+
 	select {}
 }
 
 func (s *Server) BroadCast(user *User, msg string) {
-	msg = user.Name + msg
+	msg = user.Name + " " + msg
 	s.Message <- msg
 }
 
