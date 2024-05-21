@@ -61,6 +61,24 @@ func (u *User) SendMsg(msg string) {
 			u.Name = newName
 			u.server.SendMsg(u, "你的用户名已被改为"+u.Name+"\n")
 		}
+	} else if len(msg) > 3 && msg[:3] == "to|" {
+		toUserName := strings.Split(msg, "|")[1]
+		if toUserName == "" || len(strings.Split(msg, "|")) <= 2 {
+			u.server.SendMsg(u, "消息格式错误\n")
+			return
+		}
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			u.server.SendMsg(u, "消息格式错误\n")
+			return
+		}
+		toUser, ok := u.server.UserMap[toUserName]
+		if !ok {
+			u.server.SendMsg(u, "不存在此用户\n")
+			return
+		}
+		u.server.SendMsg(toUser, "from "+u.Name+": "+content+"\n")
+
 	} else {
 		u.server.BroadCast(u, msg)
 	}

@@ -59,7 +59,7 @@ func (s *Server) Handler(conn net.Conn) {
 		select {
 		case <-isLive:
 
-		case <-time.After(time.Second * 30):
+		case <-time.After(time.Second * 300):
 			s.SendMsg(user, "你已自动离线\n")
 			close(user.C)
 			delete(s.UserMap, user.Name)
