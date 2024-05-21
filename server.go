@@ -59,6 +59,10 @@ func (s *Server) BroadCast(user *User, msg string) {
 	s.Message <- msg
 }
 
+func (s *Server) SendMsg(user *User, msg string) {
+	user.Conn.Write([]byte(msg))
+}
+
 func (s *Server) ListenMessage() {
 	for {
 		msg := <-s.Message

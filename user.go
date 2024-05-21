@@ -39,7 +39,15 @@ func (u *User) Offline() {
 }
 
 func (u *User) SendMsg(msg string) {
-	u.server.BroadCast(u, msg)
+	if msg == "who" {
+		u.server.MapLock.Lock()
+		for _, user := range u.server.UserMap {
+			u.server.SendMsg(u, user.Name+"在线\n")
+		}
+		u.server.MapLock.Unlock()
+	} else {
+		u.server.BroadCast(u, msg)
+	}
 }
 
 func (u *User) ListenMessage() {
